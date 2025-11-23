@@ -203,19 +203,23 @@ contactForm.addEventListener('submit', (e) => {
         return;
     }
     
-    // Simulation d'envoi
-    const submitBtn = contactForm.querySelector('button[type="submit"]');
-    const originalText = submitBtn.innerHTML;
+    // Construction du message WhatsApp avec les informations du formulaire
+    const whatsappNumber = '22967146677';
+    const whatsappMessage = `Bonjour, je souhaite une demande de devis.\n\n` +
+        `Nom : ${data.name}\n` +
+        `Email : ${data.email}\n` +
+        `Téléphone : ${data.phone || 'Non renseigné'}\n` +
+        `Service demandé : ${data.service}\n` +
+        `Détails du projet :\n${data.message}`;
+
+    const encodedMessage = encodeURIComponent(whatsappMessage);
+    const whatsappUrl = `https://wa.me/${whatsappNumber}?text=${encodedMessage}`;
+
+    // Ouverture de WhatsApp avec le message pré-rempli
+    window.open(whatsappUrl, '_blank');
     
-    submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Envoi en cours...';
-    submitBtn.disabled = true;
-    
-    setTimeout(() => {
-        alert('Merci pour votre demande ! Nous vous recontacterons dans les plus brefs délais.');
-        contactForm.reset();
-        submitBtn.innerHTML = originalText;
-        submitBtn.disabled = false;
-    }, 2000);
+    // Réinitialisation du formulaire après ouverture de WhatsApp
+    contactForm.reset();
 });
 
 // Effet de frappe pour le titre héro
