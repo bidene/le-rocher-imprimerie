@@ -18,24 +18,65 @@ if (preloader) {
     });
 }
 
-// Menu mobile
+// Menu mobile amélioré
+const toggleMenu = () => {
+    navMenu.classList.toggle('show');
+    
+    // Empêcher le défilement du corps lorsque le menu est ouvert
+    if (navMenu.classList.contains('show')) {
+        document.body.style.overflow = 'hidden';
+        // Ajouter une couche d'overlay
+        if (!document.querySelector('.nav-overlay')) {
+            const overlay = document.createElement('div');
+            overlay.className = 'nav-overlay';
+            document.body.appendChild(overlay);
+            
+            // Fermer le menu en cliquant sur l'overlay
+            overlay.addEventListener('click', () => {
+                navMenu.classList.remove('show');
+                document.body.style.overflow = '';
+                overlay.remove();
+            });
+        }
+    } else {
+        document.body.style.overflow = '';
+        const overlay = document.querySelector('.nav-overlay');
+        if (overlay) overlay.remove();
+    }
+};
+
+// Gestionnaire du menu burger
 if (navToggle) {
-    navToggle.addEventListener('click', () => {
-        navMenu.classList.add('show');
-    });
+    navToggle.addEventListener('click', toggleMenu);
 }
 
+// Gestionnaire de fermeture du menu
 if (navClose) {
-    navClose.addEventListener('click', () => {
-        navMenu.classList.remove('show');
-    });
+    navClose.addEventListener('click', toggleMenu);
 }
 
-// Fermer le menu en cliquant sur un lien
-document.querySelectorAll('.nav-link').forEach(link => {
+// Fermer le menu en cliquant sur un lien ou en tapant en dehors
+const navLinks = document.querySelectorAll('.nav-link');
+navLinks.forEach(link => {
     link.addEventListener('click', () => {
-        navMenu.classList.remove('show');
+        if (window.innerWidth <= 968) { // Seulement sur mobile/tablette
+            toggleMenu();
+        }
     });
+});
+
+// Fermer le menu lors du redimensionnement si on passe en desktop
+let resizeTimer;
+window.addEventListener('resize', () => {
+    clearTimeout(resizeTimer);
+    resizeTimer = setTimeout(() => {
+        if (window.innerWidth > 968) {
+            navMenu.classList.remove('show');
+            document.body.style.overflow = '';
+            const overlay = document.querySelector('.nav-overlay');
+            if (overlay) overlay.remove();
+        }
+    }, 250);
 });
 
 // Smooth scroll pour les liens de navigation
@@ -155,23 +196,45 @@ document.addEventListener('keydown', (e) => {
     }
 });
 
-// Animation au scroll
+// Animation au scroll optimisée pour mobile
 const observerOptions = {
     threshold: 0.1,
     rootMargin: '0px 0px -50px 0px'
 };
 
+// Fonction pour activer/désactiver les animations en fonction du support
+const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
 const observer = new IntersectionObserver((entries) => {
     entries.forEach(entry => {
-        if (entry.isIntersecting) {
+        if (entry.isIntersecting && !reduceMotion) {
             entry.target.classList.add('animate-in');
+            // Désobserver après l'animation pour améliorer les performances
+            observer.unobserve(entry.target);
         }
     });
 }, observerOptions);
 
-// Observer les éléments à animer
-document.querySelectorAll('.service-card, .portfolio-item, .value-item, .testimonial-item').forEach(el => {
-    observer.observe(el);
+// Observer les éléments à animer avec gestion du délai pour mobile
+function observeElements() {
+    const elements = document.querySelectorAll('.service-card, .portfolio-item, .value-item, .testimonial-item, .section-header, .about-content, .contact-content');
+    
+    // Délai progressif pour un effet d'animation en cascade
+    elements.forEach((el, index) => {
+        // Ajouter un délai progressif pour les appareils mobiles
+        if (window.innerWidth <= 768) {
+            el.style.animationDelay = `${index * 0.1}s`;
+        }
+        observer.observe(el);
+    });
+}
+
+// Démarrer l'observation après le chargement de la page
+document.addEventListener('DOMContentLoaded', observeElements);
+
+// Réinitialiser les animations lors du rafraîchissement
+window.addEventListener('beforeunload', () => {
+    window.scrollTo(0, 0);
 });
 
 // Validation et soumission du formulaire
